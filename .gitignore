@@ -1,5 +1,3 @@
-Rust / Cargo specific
-
 #########################
 # Ignore compiled artifacts and dependencies
 /target/
