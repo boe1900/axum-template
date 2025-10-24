@@ -2,6 +2,7 @@
 # Ignore compiled artifacts and dependencies
 /target/
 
+
 # Ignore Cargo's lock file specific to the repository. Please commit Cargo.lock for applications.
 # Cargo.lock
 
