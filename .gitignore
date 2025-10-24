@@ -1,1 +1,64 @@
-/target
+Rust / Cargo specific
+
+#########################
+# Ignore compiled artifacts and dependencies
+/target/
+
+# Ignore Cargo's lock file specific to the repository. Please commit Cargo.lock for applications.
+# Cargo.lock
+
+# Ignore rustfmt skips
+rustfmt.skip
+
+# Ignore IDE integration files
+.rls.toml
+*.rs.bk
+
+# Environment #
+###############
+# Ignore environment variable files
+.env
+.env.*
+!.env.example
+
+# Logs #
+########
+# Ignore log files
+*.log
+logs/
+
+# Operating System Files #
+########################
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# IDE / Editor Specific #
+#######################
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains IDEs (IntelliJ, CLion, etc.)
+.idea/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
