@@ -1,0 +1,44 @@
+[package]
+name = "axum-template"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# --- Web 框架 ---
+axum = "0.8"                # 我们选择的 Web 框架
+tokio = { version = "1", features = ["full"] } # Axum 的异步运行时
+
+# --- 序列化 / 反序列化 (JSON处理) ---
+serde = { version = "1", features = ["derive"] } # 类似于 Java 的 Jackson/Gson
+serde_json = "1"
+serde_yaml = "0.9" # <-- 新增：用于解析 YAML 配置
+
+
+# --- 配置管理 ---
+# `dotenvy` 用于从 .env 文件加载环境变量
+# config = "0.14"
+dotenvy = "0.15"
+
+# 添加 async-trait 依赖，用于 Nacos Listener 的 async fn in trait
+async-trait = "0.1" 
+
+# --- 数据库交互 ---
+# 我们使用 SQLx，一个现代的、异步的 Rust SQL 工具箱
+# `sqlx-postgres` 是它的 PostgreSQL 驱动
+# `runtime-tokio-rustls` 告诉 SQLx 使用 Tokio 运行时
+# `macros` 和 `chrono` 是常用的特性
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macros", "chrono"] }
+
+# --- 日志与追踪 ---
+# `tracing` 是 Rust 中用于结构化日志和分布式追踪的标准
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# --- 其他工具 ---
+# `anyhow` 用于更灵活的错误处理，尤其是在 main 函数中
+anyhow = "1"
+thiserror = "1.0" # 新增：用于创建自定义错误类型
+
+# --- Nacos SDK (已修正) ---
+# 根据官方文档，添加 default features 以确保功能完整
+nacos-sdk = { version = "0.5", features = ["default"] }
