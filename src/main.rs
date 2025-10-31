@@ -21,6 +21,10 @@ use axum::{Router, middleware as axum_middleware, routing::get};
 use nacos_sdk::api::config::{ConfigChangeListener, ConfigResponse, ConfigService, ConfigServiceBuilder};
 use nacos_sdk::api::naming::{NamingService, NamingServiceBuilder, ServiceInstance};
 use nacos_sdk::api::props::ClientProps;
+//数据库
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use std::time::Duration; // 用于设置连接超时
+
 
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -59,6 +63,9 @@ async fn main() -> anyhow::Result<()> {
         .expect("无法解析初始 Nacos 配置！请检查 Nacos 中的配置格式。");
     info!("成功解析初始 Nacos 配置: {:?}", initial_app_config);
 
+    // 创建数据库连接池时，不再需要 base_config
+    let db_pool = Arc::new(build_db_pool(&initial_app_config).await?);
+    info!("数据库连接池创建成功");
 
     // 将解析后的配置放入 RwLock
     let app_config_rwlock = Arc::new(RwLock::new(initial_app_config));
@@ -68,6 +75,7 @@ async fn main() -> anyhow::Result<()> {
         naming_client: naming_client.clone(),
         config_client: config_client.clone(),
         app_config: app_config_rwlock.clone(),
+        db_pool: db_pool.clone(), // 存入连接池
     };
 
     // 6. 添加配置监听器 (将 RwLock 传递给它)
@@ -76,7 +84,8 @@ async fn main() -> anyhow::Result<()> {
             config.nacos_config_data_id.clone(),
             config.nacos_config_group.clone(),
             Arc::new(AppConfigChangeListener {
-                app_config: app_config_rwlock,
+                app_config: app_state.app_config.clone(),
+                db_pool: app_state.db_pool.clone(),
             }),
         )
         .await?;
@@ -93,7 +102,7 @@ async fn main() -> anyhow::Result<()> {
         .nest("/hello", handlers::hello_handler::routes())
         // (将来可以取消注释)
         // .nest("/users", handlers::user_handler::routes())
-
+        .nest("/app-access", handlers::kms_app_access_handler::routes())
         // 应用状态 (在路由之后，中间件之前)
         .with_state(app_state) // <--- 移到了这里
 
@@ -188,10 +197,50 @@ async fn register_nacos_instance(config: &Config, client: &Arc<NamingService>) -
 }
 
 
+/// 构建数据库连接池，仅使用 Nacos 配置
+async fn build_db_pool(
+    nacos_config: &AppSpecificConfig, // Nacos 配置 (用于获取 URL)
+) -> anyhow::Result<DatabaseConnection> {
+    
+    // 1. 从 Nacos 配置中获取 URL
+    let db_config = nacos_config
+        .database
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("Nacos 配置中缺少 [database] 部分"))?;
+    
+    let db_url = db_config
+        .url
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("Nacos 配置 [database] 中缺少 'url' 字段"))?;
+
+    // 2. --- 关键步骤：移除 shellexpand ---
+    // 直接使用从 Nacos 获取的 db_url
+    
+    // 3. 使用 URL 创建连接池
+    let max_connections = db_config.pool_size.unwrap_or(5);
+
+    let mut opt = ConnectOptions::new(db_url.to_owned()); // <-- 直接使用 db_url
+    opt.max_connections(max_connections)
+       .min_connections(1)
+       .connect_timeout(Duration::from_secs(8))
+       .idle_timeout(Duration::from_secs(8))
+       .sqlx_logging(true)
+       .sqlx_logging_level(tracing::log::LevelFilter::Debug);
+
+    info!("正在连接数据库, 最大连接数: {}", max_connections);
+    // (日志中不再打印 db_url，因为它可能包含明文密码)
+    let pool = Database::connect(opt).await?;
+    
+    Ok(pool)
+}
+
+
 // --- Nacos 配置监听器实现 ---
 // (监听器中的错误处理保持不变，因为它是在运行时发生，不应让整个服务崩溃)
 struct AppConfigChangeListener {
     app_config: Arc<RwLock<AppSpecificConfig>>,
+    #[allow(dead_code)] 
+    db_pool: Arc<DatabaseConnection>,
 }
 
 // --- 修改点 ---

@@ -23,11 +23,18 @@ dotenvy = "0.15"
 async-trait = "0.1" 
 
 # --- 数据库交互 ---
-# 我们使用 SQLx，一个现代的、异步的 Rust SQL 工具箱
-# `sqlx-postgres` 是它的 PostgreSQL 驱动
-# `runtime-tokio-rustls` 告诉 SQLx 使用 Tokio 运行时
-# `macros` 和 `chrono` 是常用的特性
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macros", "chrono"] }
+sea-orm = { version = "1.0", features = [
+    "sqlx-mysql",
+    "runtime-tokio-rustls",
+    "macros",
+    "with-chrono",
+    "with-json"
+] }
+
+# --- 新增：日期时间处理 ---
+# --- 修改点 ---
+# 明确添加 chrono 依赖并启用 serde，解决 E0432
+chrono = { version = "0.4", features = ["serde"] }
 
 # --- 日志与追踪 ---
 # `tracing` 是 Rust 中用于结构化日志和分布式追踪的标准

@@ -14,12 +14,26 @@ pub struct AppSpecificConfig {
     pub greeting: Option<String>,
     // 对应 YAML 中的 log_level
     pub log_level: Option<String>,
+
+    // database 字段现在对应 DatabaseConfig 结构体
+    pub database: Option<DatabaseConfig>, // <--- 保持或取消注释
     
     // 对应 YAML 中的 feature_flags 嵌套结构
     pub feature_flags: Option<FeatureFlags>,
 
     // 对应 YAML 中的 service 嵌套结构
     pub service: Option<ServiceConfig>,
+}
+
+
+// --- 新增：数据库配置结构体 ---
+#[derive(Debug, Clone, Deserialize, Default)]
+#[allow(dead_code)] // 暂时允许未使用
+pub struct DatabaseConfig {
+    // 对应 YAML 中的 database.url
+    pub url: Option<String>,
+    // 对应 YAML 中的 database.pool_size
+    pub pool_size: Option<u32>,
 }
 
 
