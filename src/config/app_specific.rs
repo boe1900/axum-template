@@ -16,8 +16,11 @@ pub struct AppSpecificConfig {
     pub log_level: Option<String>,
 
     // database 字段现在对应 DatabaseConfig 结构体
-    pub database: Option<DatabaseConfig>, // <--- 保持或取消注释
+    pub database: Option<DatabaseConfig>,
     
+    // Redis 配置字段 ---
+    pub redis: Option<RedisConfig>,
+
     // 对应 YAML 中的 feature_flags 嵌套结构
     pub feature_flags: Option<FeatureFlags>,
 
@@ -36,6 +39,12 @@ pub struct DatabaseConfig {
     pub pool_size: Option<u32>,
 }
 
+// --- 新增：Redis 配置结构体 ---
+#[derive(Debug, Clone, Deserialize, Default)]
+#[allow(dead_code)]
+pub struct RedisConfig {
+    pub url: Option<String>,
+}
 
 /// 功能开关配置 (保持，匹配 YAML)
 #[derive(Debug, Clone, Deserialize, Default)]

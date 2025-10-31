@@ -14,6 +14,10 @@ use serde_json::json;
 use thiserror::Error;
 use tracing::error;
 
+// --- 新增：导入 Redis 相关的错误类型 ---
+use bb8_redis::bb8::RunError;
+use redis::RedisError;
+
 /// 统一的应用错误枚举
 /// 使用 thiserror 宏可以方便地将其他错误类型转换为 AppError
 #[derive(Error, Debug)]
@@ -27,6 +31,13 @@ pub enum AppError {
 
     #[error("数据库错误: {0}")]
     DatabaseError(#[from] DbErr), // <-- 现在 `sqlx::Error` 可以被正确找到了
+
+    #[error("Redis 连接池错误: {0}")]
+    RedisPoolError(#[from] RunError<RedisError>),
+
+    // --- 新增：处理 Redis 命令错误 ---
+    #[error("Redis 命令错误: {0}")]
+    RedisError(#[from] RedisError),
 
     #[error("Anyhow 错误: {0}")]
     Anyhow(#[from] anyhow::Error),
@@ -48,6 +59,8 @@ impl IntoResponse for AppError {
             AppError::Nacos(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Nacos error: {}", e)),
             AppError::Config(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Config error: {}", e)),
             AppError::DatabaseError(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)),
+            AppError::RedisPoolError(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis pool error: {}", e)),
+            AppError::RedisError(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis command error: {}", e)),
             AppError::Anyhow(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Internal error: {}", e)),
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),

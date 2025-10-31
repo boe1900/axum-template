@@ -9,6 +9,8 @@ pub mod health_handler;
 // 新增：KmsAppAccess 处理器
 pub mod kms_app_access_handler;
 
+pub mod redis_handler;
+
 
 // 为了方便 main.rs 调用，我们在这里重导出 health_check 函数
 pub use health_handler::health_check;

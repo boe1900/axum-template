@@ -5,6 +5,8 @@
 // 1. 声明子模块
 pub mod database;
 pub mod nacos;
+pub mod redis;
+
 
 // 2. 重导出子模块的公共函数
 pub use nacos::{
@@ -42,9 +44,16 @@ pub async fn setup_application_state(config: &Config) -> anyhow::Result<AppState
         .expect("无法解析初始 Nacos 配置！请检查 Nacos 中的配置格式。");
     info!("成功解析初始 Nacos 配置: {:?}", initial_app_config);
 
-    // 构建数据库连接池
-    let db_pool = Arc::new(database::build_db_pool(&initial_app_config).await?);
-    info!("数据库连接池创建成功");
+    // 并行构建 DB 和 Redis 连接池
+    info!("正在并行创建数据库和 Redis 连接池...");
+    let (db_pool_result, redis_pool_result) = tokio::join!(
+        database::build_db_pool(&initial_app_config),
+        redis::build_redis_pool(&initial_app_config)
+    );
+
+    let db_pool = Arc::new(db_pool_result?);
+    let redis_pool = Arc::new(redis_pool_result?);
+    info!("数据库和 Redis 连接池创建成功");
 
     // 将解析后的配置放入 RwLock
     let app_config_rwlock = Arc::new(RwLock::new(initial_app_config));
@@ -56,8 +65,8 @@ pub async fn setup_application_state(config: &Config) -> anyhow::Result<AppState
         config_client: config_client.clone(),
         app_config: app_config_rwlock.clone(),
         db_pool: db_pool.clone(),
+        redis_pool: redis_pool.clone(),
     };
-
 
     // 添加配置监听器
     config_client

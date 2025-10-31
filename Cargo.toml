@@ -49,3 +49,12 @@ thiserror = "1.0" # 新增：用于创建自定义错误类型
 # --- Nacos SDK (已修正) ---
 # 根据官方文档，添加 default features 以确保功能完整
 nacos-sdk = { version = "0.5", features = ["default"] }
+
+
+# --- Redis (已更新) ---
+# `redis` 是核心客户端 (类似 Jedis/Lettuce)
+redis = { version = "0.32", features = ["tokio-comp"] }
+# --- 修改点 ---
+# `bb8` 依赖被移除，bb8-redis 会自动将其作为传递性依赖导入
+# bb8 = "0.12" 
+bb8-redis = "0.24"

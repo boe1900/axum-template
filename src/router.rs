@@ -3,9 +3,9 @@
 
 use crate::state::AppState;
 use axum::{
+    Router, // ServiceExt 不再需要在这里导入
     middleware as axum_middleware,
     routing::get,
-    Router, // ServiceExt 不再需要在这里导入
 };
 
 /// 创建并组装所有的 Axum 路由
@@ -18,18 +18,13 @@ pub fn create_router(app_state: AppState) -> Router {
         // 挂载 /hello 路由
         .nest("/hello", crate::handlers::hello_handler::routes())
         // 挂载 /app-access 路由
-        .nest(
-            "/app-access",
-            crate::handlers::kms_app_access_handler::routes(),
-        )
+        .nest("/app-access",crate::handlers::kms_app_access_handler::routes(),)
+        .nest("/redis-test", crate::handlers::redis_handler::routes())
         // (将来在这里添加更多 .nest() ...)
-
         // 注入共享状态
         .with_state(app_state)
-        
         // 应用全局日志中间件
         .layer(axum_middleware::from_fn(
             crate::middleware::logging::log_requests,
         ))
 }
-
