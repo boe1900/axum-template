@@ -21,6 +21,7 @@ pub async fn find_by_id(
 /// # Arguments
 /// * `db` - `DatabaseConnection`
 /// * `name` - 要查找的应用名称
+#[allow(dead_code)] 
 pub async fn find_by_name(
     db: &DatabaseConnection,
     name: &str,
