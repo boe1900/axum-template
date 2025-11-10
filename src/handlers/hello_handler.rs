@@ -7,6 +7,9 @@ use axum::{
 };
 use serde::Serialize; // <-- 新增：用于派生 Serialize
 use tracing::info; // 导入日志宏
+use crate::response::ApiResponse; // 导入统一响应结构
+use crate::errors::AppError; // 导入错误类型
+
 
 /// 定义与 "hello" 相关的路由
 pub fn routes() -> Router<AppState> {
@@ -26,7 +29,7 @@ struct HelloResponse {
 /// 一个从 AppState 读取 Nacos 配置并返回 JSON 的 handler
 async fn hello_from_nacos_config(
     State(state): State<AppState>, // 使用 State 提取器来获取共享状态
-) -> Json<HelloResponse> { // <-- 修改：返回类型为 Json<HelloResponse>
+) -> Result<Json<ApiResponse<HelloResponse>>, AppError> { // <-- 修改：返回类型为 Json<HelloResponse>
     info!("Handler: hello_from_nacos_config 被调用");
 
     // --- 从 AppState 读取已解析的配置 ---
@@ -61,6 +64,6 @@ async fn hello_from_nacos_config(
         dashboard_enabled: dashboard_enabled_config,
     };
 
-    // 使用 Json(...) 将结构体包装成 JSON 响应
-    Json(response)
+    // --- 修改点：使用 ApiResponse::success 包装 ---
+    Ok(Json(ApiResponse::success(response)))
 }
