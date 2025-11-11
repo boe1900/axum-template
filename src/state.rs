@@ -12,8 +12,10 @@ use tokio::sync::RwLock;
 use sea_orm::DatabaseConnection;
 
 // 从 `bb8_redis` 中导入 `bb8` 提供的类型
-use bb8_redis::bb8::{Pool};
 use bb8_redis::RedisConnectionManager;
+use bb8_redis::bb8::Pool;
+use reqwest::Client; // <-- 新增：导入 reqwest 客户端
+
 
 /// AppState 结构体包含了所有需要在 handlers 之间共享的状态。
 #[derive(Clone)]
@@ -25,10 +27,9 @@ pub struct AppState {
     // 添加 app_config 字段来持有从 Nacos 解析的配置
     pub app_config: Arc<RwLock<AppSpecificConfig>>,
     // pub db_pool: PgPool, // 将来添加数据库连接池
+    pub db_pool: DatabaseConnection, // <-- 使用 SeaORM 的连接池类型
 
-    pub db_pool: Arc<DatabaseConnection>, // <-- 使用 SeaORM 的连接池类型
+    pub redis_pool: Pool<RedisConnectionManager>,
 
-    pub redis_pool: Arc<Pool<RedisConnectionManager>>,
-
+    pub http_client: Client,
 }
-

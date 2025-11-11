@@ -6,6 +6,7 @@
 pub mod database;
 pub mod nacos;
 pub mod redis;
+pub mod http;
 
 
 // 2. 重导出子模块的公共函数
@@ -51,8 +52,11 @@ pub async fn setup_application_state(config: &Config) -> anyhow::Result<AppState
         redis::build_redis_pool(&initial_app_config)
     );
 
-    let db_pool = Arc::new(db_pool_result?);
-    let redis_pool = Arc::new(redis_pool_result?);
+    // HTTP 客户端创建是同步的，不需要 join
+    let http_client = http::build_http_client(); // <-- 修改点：在这里调用
+
+    let db_pool = db_pool_result?;
+    let redis_pool = redis_pool_result?;
     info!("数据库和 Redis 连接池创建成功");
 
     // 将解析后的配置放入 RwLock
@@ -64,8 +68,9 @@ pub async fn setup_application_state(config: &Config) -> anyhow::Result<AppState
         naming_client: naming_client.clone(),
         config_client: config_client.clone(),
         app_config: app_config_rwlock.clone(),
-        db_pool: db_pool.clone(),
-        redis_pool: redis_pool.clone(),
+        db_pool: db_pool,
+        redis_pool: redis_pool,
+        http_client
     };
 
     // 添加配置监听器

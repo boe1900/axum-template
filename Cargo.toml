@@ -58,3 +58,7 @@ redis = { version = "0.32", features = ["tokio-comp"] }
 # `bb8` 依赖被移除，bb8-redis 会自动将其作为传递性依赖导入
 # bb8 = "0.12" 
 bb8-redis = "0.24"
+
+# --- 新增：HTTP 客户端 ---
+# 用于调用 auth-service
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }

@@ -23,6 +23,8 @@ pub struct Config {
     pub nacos_password: Option<String>,
     pub nacos_config_data_id: String,
     pub nacos_config_group: String,
+    // --- 新增：Auth 服务的 Nacos 名 ---
+    pub auth_service_name: String,
 }
 
 /// 配置加载错误枚举 (保持公共)
@@ -48,7 +50,8 @@ impl Config {
         let nacos_password = env::var("NACOS_PASSWORD").ok(); // 可选
         let nacos_config_data_id = env::var("NACOS_CONFIG_DATA_ID")?;
         let nacos_config_group = env::var("NACOS_CONFIG_GROUP").unwrap_or_else(|_| "DEFAULT_GROUP".to_string());
-
+        // --- 新增：加载 Auth 服务名 ---
+        let auth_service_name = env::var("AUTH_SERVICE_NAME")?;
         Ok(Config {
             server_addr,
             database_url,
@@ -58,6 +61,7 @@ impl Config {
             nacos_password,
             nacos_config_data_id,
             nacos_config_group,
+            auth_service_name
         })
     }
 }
