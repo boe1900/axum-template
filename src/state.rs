@@ -4,6 +4,7 @@
 
 // 更新 use 语句以指向新的模块路径
 use crate::config::app_specific::AppSpecificConfig;
+use crate::config::Config; // <-- 新增：导入基础配置
 use nacos_sdk::api::{config::ConfigService, naming::NamingService};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -21,6 +22,9 @@ use reqwest::Client; // <-- 新增：导入 reqwest 客户端
 #[derive(Clone)]
 #[allow(dead_code)] // 暂时允许未使用
 pub struct AppState {
+    // --- 新增：持有基础配置 ---
+    pub base_config: Arc<Config>,
+
     pub naming_client: Arc<NamingService>,
     pub config_client: Arc<ConfigService>,
     // --- 新增字段 ---

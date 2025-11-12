@@ -51,7 +51,9 @@ impl Config {
         let nacos_config_data_id = env::var("NACOS_CONFIG_DATA_ID")?;
         let nacos_config_group = env::var("NACOS_CONFIG_GROUP").unwrap_or_else(|_| "DEFAULT_GROUP".to_string());
         // --- 新增：加载 Auth 服务名 ---
-        let auth_service_name = env::var("AUTH_SERVICE_NAME")?;
+        // 使用 .unwrap_or_else 提供一个默认值
+        let auth_service_name = env::var("AUTH_SERVICE_NAME")
+            .unwrap_or_else(|_| "rtsp-auth".to_string());
         Ok(Config {
             server_addr,
             database_url,

@@ -32,6 +32,9 @@ pub enum ServiceError {
     // 对应 10003 FORBIDDEN
     #[error("无权访问该资源: {0}")]
     Forbidden(String), // 允许传入需要什么权限
+
+    #[error("未经认证或认证信息已过期")]
+    Unauthorized,
 }
 
 /// 统一的应用错误枚举
@@ -58,6 +61,8 @@ pub enum AppError {
     #[error("Anyhow 错误: {0}")]
     Anyhow(#[from] anyhow::Error),
 
+    #[error("内部错误: {0}")]
+    InternalError(String), // 对应 20001
     // --- 业务错误 (1xxxx) ---
     // AppError::Service(ServiceError) 就等同于 Java 的 BusinessException(ErrorCode)
     #[error("{0}")] // 让 ServiceError 的 #[error] 消息透传出来
@@ -81,6 +86,7 @@ impl IntoResponse for AppError {
                     ServiceError::Forbidden(_) => (StatusCode::FORBIDDEN, 10003),
                     // 对应 10004
                     ServiceError::ResourceNotFound => (StatusCode::NOT_FOUND, 10004),
+                    ServiceError::Unauthorized => (StatusCode::UNAUTHORIZED, 10002),
                 };
                 // err.to_string() 会自动使用 ServiceError 上定义的 #[error] 消息
                 // 比如 "操作重复: 用户名 'admin' 已存在"
@@ -125,6 +131,7 @@ impl IntoResponse for AppError {
                 30001,
                 format!("Nacos SDK 错误: {}", e),
             ),
+            AppError::InternalError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, 20001, msg),
         };
 
         // 在服务器日志中记录详细错误

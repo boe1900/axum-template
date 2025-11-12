@@ -65,6 +65,8 @@ pub async fn setup_application_state(config: &Config) -> anyhow::Result<AppState
 
      // 创建 AppState
     let app_state = AppState {
+         // --- 新增：存入基础配置 ---
+        base_config: Arc::new(config.clone()), // 克隆基础配置
         naming_client: naming_client.clone(),
         config_client: config_client.clone(),
         app_config: app_config_rwlock.clone(),
