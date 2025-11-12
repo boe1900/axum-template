@@ -14,11 +14,13 @@ pub mod app_specific;
 /// 应用的基础配置，从环境变量加载
 #[derive(Debug, Clone)]
 pub struct Config {
+    pub app_name: String, // Nacos 中注册的服务名
     pub server_addr: String,
     #[allow(dead_code)] // 允许这个字段是“死代码”（未被读取）
     pub database_url: Option<String>,
     pub nacos_addr: String,
-    pub nacos_namespace: String,
+    pub nacos_naming_namespace: String,
+    pub nacos_config_namespace: String,
     pub nacos_username: Option<String>,
     pub nacos_password: Option<String>,
     pub nacos_config_data_id: String,
@@ -41,29 +43,33 @@ impl Config {
     pub fn from_env() -> Result<Self, ConfigError> {
         // 尝试加载 .env 文件，忽略错误（比如文件不存在）
         dotenvy::dotenv().ok();
-
+        let app_name = env::var("APP_NAME")?;
         let server_addr = env::var("SERVER_ADDR").unwrap_or_else(|_| "0.0.0.0:4000".to_string());
         let database_url = env::var("DATABASE_URL").ok(); // 可选
         let nacos_addr = env::var("NACOS_ADDR")?;
-        let nacos_namespace = env::var("NACOS_NAMESPACE").unwrap_or_default(); // 默认为空字符串 (public)
+        let nacos_naming_namespace = env::var("NACOS_NAMING_NAMESPACE").unwrap_or_default();
+        let nacos_config_namespace = env::var("NACOS_CONFIG_NAMESPACE").unwrap_or_default();
         let nacos_username = env::var("NACOS_USERNAME").ok(); // 可选
         let nacos_password = env::var("NACOS_PASSWORD").ok(); // 可选
         let nacos_config_data_id = env::var("NACOS_CONFIG_DATA_ID")?;
-        let nacos_config_group = env::var("NACOS_CONFIG_GROUP").unwrap_or_else(|_| "DEFAULT_GROUP".to_string());
+        let nacos_config_group =
+            env::var("NACOS_CONFIG_GROUP").unwrap_or_else(|_| "DEFAULT_GROUP".to_string());
         // --- 新增：加载 Auth 服务名 ---
         // 使用 .unwrap_or_else 提供一个默认值
-        let auth_service_name = env::var("AUTH_SERVICE_NAME")
-            .unwrap_or_else(|_| "rtsp-auth".to_string());
+        let auth_service_name =
+            env::var("AUTH_SERVICE_NAME").unwrap_or_else(|_| "rtsp-auth".to_string());
         Ok(Config {
+            app_name, // <-- 新增
             server_addr,
             database_url,
             nacos_addr,
-            nacos_namespace,
+            nacos_naming_namespace, // <-- 修改
+            nacos_config_namespace, // <-- 修改
             nacos_username,
             nacos_password,
             nacos_config_data_id,
             nacos_config_group,
-            auth_service_name
+            auth_service_name,
         })
     }
 }

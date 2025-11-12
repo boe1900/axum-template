@@ -13,28 +13,20 @@ use tokio::sync::RwLock;
 use tracing::{error, info};
 
 
-pub fn build_nacos_client_props(config: &Config) -> ClientProps {
+/// 构建 Nacos Naming (服务发现) 客户端
+pub fn build_nacos_naming_client(config: &Config) -> anyhow::Result<NamingService> {
+    // 独立构建 Naming Props
     let mut props = ClientProps::new()
         .server_addr(config.nacos_addr.clone())
-        .namespace(config.nacos_namespace.clone())
-        .app_name("axum-template-service"); // 服务名硬编码，也可放入配置
-    // 只有当用户名和密码都存在时，才设置认证信息
+        .namespace(config.nacos_naming_namespace.clone()) // <-- 使用 Naming Namespace
+        .app_name(config.app_name.clone()); // <-- 使用 config 中的 app_name
+    
     if let (Some(username), Some(password)) = (config.nacos_username.clone(), config.nacos_password.clone()) {
         props = props.auth_username(username).auth_password(password);
     }
-    props
-}
-
-
-/// 构建 Nacos Naming (服务发现) 客户端
-// 接收 &Config 而不是 ClientProps，以便检查用户名
-pub fn build_nacos_naming_client(config: &Config) -> anyhow::Result<NamingService> {
-    let props = build_nacos_client_props(config); // 先构建基础 props
+    
     let builder = NamingServiceBuilder::new(props);
-
-    // 直接检查 config 中的 username 是否存在
     let client = if config.nacos_username.is_some() {
-        // 如果有用户名（假设密码也必然有），启用 auth_plugin_http
         builder.enable_auth_plugin_http().build()?
     } else {
         builder.build()?
@@ -43,14 +35,19 @@ pub fn build_nacos_naming_client(config: &Config) -> anyhow::Result<NamingServic
 }
 
 /// 构建 Nacos Config (配置中心) 客户端
-// 接收 &Config 而不是 ClientProps
 pub fn build_nacos_config_client(config: &Config) -> anyhow::Result<ConfigService> {
-    let props = build_nacos_client_props(config); // 先构建基础 props
-    let builder = ConfigServiceBuilder::new(props);
+    // 独立构建 Config Props
+    let mut props = ClientProps::new()
+        .server_addr(config.nacos_addr.clone())
+        .namespace(config.nacos_config_namespace.clone()) // <-- 使用 Config Namespace
+        .app_name(config.app_name.clone()); // <-- 使用 config 中的 app_name
+        
+    if let (Some(username), Some(password)) = (config.nacos_username.clone(), config.nacos_password.clone()) {
+        props = props.auth_username(username).auth_password(password);
+    }
 
-    // 直接检查 config 中的 username 是否存在
+    let builder = ConfigServiceBuilder::new(props);
     let client = if config.nacos_username.is_some() {
-        // 如果有用户名，启用 auth_plugin_http
         builder.enable_auth_plugin_http().build()?
     } else {
         builder.build()?
@@ -65,7 +62,7 @@ pub async fn register_nacos_instance(config: &Config, client: &Arc<NamingService
     let ip = parts.get(0).unwrap_or(&"127.0.0.1").to_string(); // 提供默认 IP
     let port: i32 = parts.get(1).unwrap_or(&"3000").parse()?; // 提供默认端口并解析
 
-    let service_name = "axum-template-service".to_string(); // 服务名硬编码
+    let service_name = config.app_name.clone(); 
 
     // 创建 ServiceInstance
     let instance = ServiceInstance {
