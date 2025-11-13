@@ -12,6 +12,10 @@ use axum::{
 use tracing::info;
 
 use crate::response::ApiResponse; // 导入统一响应结构
+use axum::Extension;
+use crate::middleware::auth::CurrentUser;
+use std::sync::Arc;
+
 
 
 /// 定义 /app-access 相关的路由
@@ -32,8 +36,13 @@ pub fn routes() -> Router<AppState> {
 async fn get_app_access_handler(
     State(state): State<AppState>,
     Path(id): Path<i64>,
+    Extension(user): Extension<Arc<CurrentUser>>,
 ) -> Result<Json<ApiResponse<crate::models::kms_app_access::Model>>, AppError> {
-    info!("Handler: get_app_access_handler 被调用, ID: {}", id);
+    // 你现在可以直接使用 `user` 了！
+    info!(
+        "Handler: 用户 {} (ID: {}) 正在访问 AppAccess ID: {}",
+        user.username, user.id, id
+    );
 
     // 调用 service 层的业务逻辑
     let app_access = kms_app_access_service::get_app_access_by_id(&state, id).await?;
