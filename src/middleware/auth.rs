@@ -34,8 +34,11 @@ struct Authority {
 // --- 2. 定义我们自己的 CurrentUser 结构体 (保持不变) ---
 #[derive(Debug, Clone)]
 pub struct CurrentUser {
+    #[allow(dead_code)]
     pub id: String,
+    #[allow(dead_code)]
     pub username: String,
+    #[allow(dead_code)]
     pub permissions: Vec<String>,
 }
 
