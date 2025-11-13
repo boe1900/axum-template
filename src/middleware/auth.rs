@@ -116,6 +116,7 @@ async fn check_token_with_auth_service(
         )
         .await?;
 
+    
     let auth_service_url = format!("http://{}:{}/token/check_token", instance.ip, instance.port);
     info!("正在调用 Auth 服务: {}", auth_service_url);
 
