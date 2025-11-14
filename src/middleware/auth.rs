@@ -82,3 +82,26 @@ fn extract_token(headers: &HeaderMap) -> Result<String, AppError> {
     
     Ok(header_value[7..].to_string())
 }
+
+pub fn check_permission(
+    user: &Arc<CurrentUser>,
+    required_permission: &str,
+) -> Result<(), AppError> {
+    
+    // (你可以用 wildmatch 库来支持通配符)
+    if user.permissions.contains(&required_permission.to_string()) {
+        // 权限通过！
+        Ok(())
+    } else {
+        // 权限不足！返回 403 Forbidden
+        warn!(
+            "权限拒绝：用户 {} (ID: {}) 缺少权限 '{}'",
+            user.username, user.id, required_permission
+        );
+        Err(ServiceError::Forbidden(format!(
+            "缺少权限: {}",
+            required_permission
+        ))
+        .into())
+    }
+}

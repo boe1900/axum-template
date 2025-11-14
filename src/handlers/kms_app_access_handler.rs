@@ -5,17 +5,18 @@ use crate::errors::AppError;
 use crate::services::kms_app_access_service;
 use crate::state::AppState;
 use axum::{
+    Json, Router,
     extract::{Path, State},
     routing::get,
-    Json, Router,
 };
 use tracing::info;
 
+use crate::middleware::auth::CurrentUser;
 use crate::response::ApiResponse; // 导入统一响应结构
 use axum::Extension;
-use crate::middleware::auth::CurrentUser;
 use std::sync::Arc;
 
+use crate::middleware::auth::check_permission;
 
 
 /// 定义 /app-access 相关的路由
@@ -38,6 +39,8 @@ async fn get_app_access_handler(
     Path(id): Path<i64>,
     Extension(user): Extension<Arc<CurrentUser>>,
 ) -> Result<Json<ApiResponse<crate::models::kms_app_access::Model>>, AppError> {
+
+    check_permission(&user, "kms_kmsAppAccess_view")?; // 👈 检查权限
     // 你现在可以直接使用 `user` 了！
     info!(
         "Handler: 用户 {} (ID: {}) 正在访问 AppAccess ID: {}",
