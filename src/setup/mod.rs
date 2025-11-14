@@ -4,27 +4,22 @@
 
 // 1. 声明子模块
 pub mod database;
+pub mod http;
 pub mod nacos;
 pub mod redis;
-pub mod http;
-
 
 // 2. 重导出子模块的公共函数
-pub use nacos::{
-    register_nacos_instance, AppConfigChangeListener,
-};
+pub use nacos::{AppConfigChangeListener, deregister_nacos_instance, register_nacos_instance};
 
 use crate::config::Config;
+use crate::config::app_specific::parse_nacos_config;
 use crate::state::AppState;
+use axum::Router;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tracing::info;
-use axum::Router;
-use crate::config::app_specific::parse_nacos_config;
-
-
 
 // --- 封装所有启动逻辑的主函数 ---
 /// 初始化所有应用服务（Nacos 客户端、数据库池、配置加载和监听）
@@ -37,9 +32,15 @@ pub async fn setup_application_state(config: &Config) -> anyhow::Result<AppState
 
     // 获取初始 Nacos 配置并解析
     let initial_config_resp = config_client
-        .get_config(config.nacos_config_data_id.clone(), config.nacos_config_group.clone())
+        .get_config(
+            config.nacos_config_data_id.clone(),
+            config.nacos_config_group.clone(),
+        )
         .await?;
-    info!("从 Nacos 获取到初始 ConfigResponse: {:?}", initial_config_resp);
+    info!(
+        "从 Nacos 获取到初始 ConfigResponse: {:?}",
+        initial_config_resp
+    );
 
     let initial_app_config = parse_nacos_config(&initial_config_resp.content())
         .expect("无法解析初始 Nacos 配置！请检查 Nacos 中的配置格式。");
@@ -62,17 +63,16 @@ pub async fn setup_application_state(config: &Config) -> anyhow::Result<AppState
     // 将解析后的配置放入 RwLock
     let app_config_rwlock = Arc::new(RwLock::new(initial_app_config));
 
-
-     // 创建 AppState
+    // 创建 AppState
     let app_state = AppState {
-         // --- 新增：存入基础配置 ---
+        // --- 新增：存入基础配置 ---
         base_config: Arc::new(config.clone()), // 克隆基础配置
         naming_client: naming_client.clone(),
         config_client: config_client.clone(),
         app_config: app_config_rwlock.clone(),
         db_pool: db_pool,
         redis_pool: redis_pool,
-        http_client
+        http_client,
     };
 
     // 添加配置监听器
@@ -80,25 +80,31 @@ pub async fn setup_application_state(config: &Config) -> anyhow::Result<AppState
         .add_listener(
             config.nacos_config_data_id.clone(),
             config.nacos_config_group.clone(),
-            Arc::new(AppConfigChangeListener { 
-                app_config: app_state.app_config.clone()
+            Arc::new(AppConfigChangeListener {
+                app_config: app_state.app_config.clone(),
             }),
         )
         .await?;
     info!("已添加 Nacos 配置监听器");
-// 7. 返回构建好的 AppState
+    // 7. 返回构建好的 AppState
     Ok(app_state)
 }
 
-
 // --- 封装 Axum 服务器启动 (保持不变) ---
 /// 绑定端口并启动 Axum Web 服务器
-pub async fn run_server(app: Router, server_addr: &str) -> anyhow::Result<()> {
+pub async fn run_server(
+    app: Router,
+    server_addr: &str,
+    // 接收一个“停机信号”
+    shutdown_signal: impl Future<Output = ()> + Send + 'static,
+) -> anyhow::Result<()> {
     let addr = server_addr.parse::<SocketAddr>()?;
     info!("服务器已启动，正在监听: http://{}", &addr);
-    
+
     let listener = TcpListener::bind(addr).await?;
-    axum::serve(listener, app.into_make_service()).await?;
+    axum::serve(listener, app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal)
+        .await?;
 
     Ok(())
 }

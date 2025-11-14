@@ -83,6 +83,30 @@ pub async fn register_nacos_instance(config: &Config, client: &Arc<NamingService
 }
 
 
+// --- 新增：注销服务实例 ---
+/// 从 Nacos 注销服务实例
+pub async fn deregister_nacos_instance(config: &Config, client: &Arc<NamingService>) -> anyhow::Result<()> {
+    info!("正在从 Nacos 注销服务...");
+    let parts: Vec<&str> = config.server_addr.split(':').collect();
+    let ip = parts.get(0).unwrap_or(&"127.0.0.1").to_string();
+    let port: i32 = parts.get(1).unwrap_or(&"3000").parse()?;
+    let service_name = config.app_name.clone();
+
+    let instance = ServiceInstance {
+        ip: ip.clone(),
+        port,
+        ..Default::default()
+    };
+
+    let group_name = None;
+
+    client.deregister_instance(service_name.clone(), group_name, instance).await?;
+    
+    info!("服务已成功从 Nacos 注销");
+    Ok(())
+}
+
+
 // --- Nacos 配置监听器实现 ---
 // (监听器中的错误处理保持不变，因为它是在运行时发生，不应让整个服务崩溃)
 pub struct AppConfigChangeListener {

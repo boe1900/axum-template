@@ -222,6 +222,7 @@ dependencies = [
  "async-trait",
  "axum 0.8.6",
  "bb8-redis",
+ "cfg-if",
  "chrono",
  "dotenvy",
  "nacos-sdk",

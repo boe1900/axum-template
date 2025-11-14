@@ -62,3 +62,6 @@ bb8-redis = "0.24"
 # --- 新增：HTTP 客户端 ---
 # 用于调用 auth-service
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# --- 新增：用于健壮的条件编译 ---
+cfg-if = "1.0"
