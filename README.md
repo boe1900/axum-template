@@ -146,7 +146,7 @@ Spring Boot 服务可以通过 Nacos 和 OpenFeign 像调用其他 Java 服务�
 
 本模板通过 `src/clients/` 模块实现了“Rust 版的 Feign”，它封装了服务发现和 HTTP 调用。
 
-1. **Java 服务注册:** 你的 Java 服务（例如 `rtsp-upms-service`）正常注册到 Nacos。
+1. **Java 服务注册:** 你的 Java 服务（例如 `upms-service`）正常注册到 Nacos。
 2. **Rust 客户端封装:**
    - `src/clients/service_client.rs`: 提供了通用的 `get_service` 和 `post_service` 函数。它们封装了 Nacos 服务发现 (`select_one_healthy_instance`) 和 `reqwest` HTTP 调用。
    - `src/clients/auth_client.rs`: 提供了**特定业务**的客户端。它负责：
